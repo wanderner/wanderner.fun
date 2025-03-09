@@ -14,7 +14,7 @@ env:
 jobs:
   deploy:
     # Enable this job by setting to true
-    if: ${{ false }}
+    # if: ${{ false }}
     runs-on: ubuntu-latest
 
     steps:
