@@ -1,0 +1,73 @@
+version: "3"
+
+services:
+  ghost:
+    image: docker.io/bitnami/ghost:latest # https://hub.docker.com/r/bitnami/ghost
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - NODE_ENV
+      - GHOST_DATABASE_HOST=db
+      - GHOST_DATABASE_PORT_NUMBER=3306
+      - GHOST_DATABASE_USER=${MYSQL_USER}
+      - GHOST_DATABASE_PASSWORD=${MYSQL_PASSWORD}
+      - GHOST_DATABASE_NAME=${MYSQL_DATABASE}
+      - GHOST_USERNAME=${GHOST_USERNAME}
+      - GHOST_EMAIL=${GHOST_EMAIL}
+      - GHOST_PASSWORD=${GHOST_PASSWORD}
+      - GHOST_HOST=${DOMAIN}
+      - GHOST_PORT_NUMBER=${PORT}
+      - GHOST_ENABLE_HTTPS=yes
+      # - GHOST_SMTP_HOST=${SMTP_HOST}
+      # - GHOST_SMTP_PORT=${SMTP_PORT}
+      # - GHOST_SMTP_USER=${SMTP_USER}
+      # - GHOST_SMTP_PASSWORD=${SMTP_PASS}
+      # - GHOST_SMTP_PROTOCOL=${SMTP_SERVICE}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.${PROJECT}-${ENV}.entrypoints=https"
+      - "traefik.http.routers.${PROJECT}-${ENV}.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.${PROJECT}-${ENV}.tls=true"
+      - "traefik.http.routers.${PROJECT}-${ENV}.tls.certresolver=cloudflare"
+      - "traefik.http.services.${PROJECT}-${ENV}.loadbalancer.server.port=${PORT}"
+      - "traefik.http.routers.${PROJECT}-${ENV}.middlewares=${traefik_middlewares}"
+      - "traefik.http.middlewares.auth.basicauth.users=beta:$$apr1$$0bFTQCO0$$QKb0vpl9.NTaShIaEvImP0"
+    volumes:
+      - content:/bitnami/ghost
+    networks:
+      - db
+      - traefik
+  db:
+    image: docker.io/bitnami/mysql:8.2 # https://hub.docker.com/r/bitnami/mysql
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+    healthcheck:
+      test: "mysqladmin ping -u root --password=\"${MYSQL_ROOT_PASSWORD}\" || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - db:/bitnami/mysql
+    networks:
+      - db
+
+volumes:
+  db:
+    external: true
+    name: ${PROJECT}-db-${ENV}
+  content:
+    external: true
+    name: ${PROJECT}-content-${ENV}
+
+networks:
+  db:
+    name: ${PROJECT}-db-${ENV}
+  traefik:
+    external: true
+    name: traefik

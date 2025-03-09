@@ -1,0 +1,38 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - prod
+
+env:
+  # Update REPO_PATH_ON_SERVER with the path to your repository
+  REPO_PATH_ON_SERVER: ~/hw/hwiki-${{ github.ref_name }}
+
+jobs:
+  deploy:
+    # Enable this job by setting to true
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: SSH to server and deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          script_stop: true # Stop script on error
+          script: |
+            cd ${{ env.REPO_PATH_ON_SERVER }}
+            git pull
+            echo "${{ secrets.ENV_FILE }}" > .env
+            sed -i '/DRONE_SSH_PREV_COMMAND_EXIT_CODE/d' .env
+            docker-compose down
+            docker-compose --env-file .env up -d
