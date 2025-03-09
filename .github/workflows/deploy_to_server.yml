@@ -9,7 +9,7 @@ on:
 
 env:
   # Update REPO_PATH_ON_SERVER with the path to your repository
-  REPO_PATH_ON_SERVER: ~/hw/hwiki-${{ github.ref_name }}
+  REPO_PATH_ON_SERVER: ~/websites/wanderner.fun-${{ github.ref_name }}
 
 jobs:
   deploy:
